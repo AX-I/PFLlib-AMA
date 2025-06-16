@@ -49,6 +49,8 @@ from flcore.servers.serverda import PFL_DA
 from flcore.servers.serverlc import FedLC
 from flcore.servers.serveras import FedAS
 
+from flcore.servers.serverama import FedAMA
+
 from flcore.trainmodel.models import *
 
 from flcore.trainmodel.bilstm import *
@@ -360,7 +362,14 @@ def run(args):
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedAS(args, i)
-            
+
+        elif args.algorithm == 'FedAMA':
+
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedAMA(args, i)
+
         else:
             raise NotImplementedError
 
