@@ -2,7 +2,7 @@ import time
 import numpy as np
 import random
 import torch
-import cvxpy as cvx
+#import cvxpy as cvx
 import copy
 from flcore.clients.clientpac import clientPAC
 from flcore.servers.serverbase import Server
