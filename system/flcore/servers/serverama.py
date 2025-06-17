@@ -63,7 +63,7 @@ class FedAMA(Server):
 
         if self.num_new_clients > 0:
             self.eval_new_clients = True
-            self.set_new_clients(clientALA)
+            self.set_new_clients(clientAMA)
             print(f"\n-------------Fine tuning round-------------")
             print("\nEvaluate new clients")
             self.evaluate()

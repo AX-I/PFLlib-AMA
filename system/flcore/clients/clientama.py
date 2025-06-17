@@ -74,64 +74,11 @@ class clientAMA(Client):
 
     def local_initialization(self, received_global_model):
         pass
-        #self.ALA.adaptive_local_aggregation(received_global_model, self.model)
 
     def set_parameters(self, model, progress):
-
-        # Get class-specific prototypes from the local model
-        local_prototypes = [[] for _ in range(self.num_classes)]
-        batch_size = 16  # or any other suitable value
-        trainloader = self.load_train_data(batch_size=batch_size)
-
-        # print(f'client{id}')
-        for x_batch, y_batch in trainloader:
-            x_batch = x_batch.to(self.device)
-            y_batch = y_batch.to(self.device)
-
-            with torch.no_grad():
-                proto_batch = self.model.base(x_batch)
-
-            # Scatter the prototypes based on their labels
-            for proto, y in zip(proto_batch, y_batch):
-                local_prototypes[y.item()].append(proto)
-
-        mean_prototypes = []
-
-        # print(f'client{self.id}')
-        for class_prototypes in local_prototypes:
-
-            if not class_prototypes == []:
-                # Stack the tensors for the current class
-                stacked_protos = torch.stack(class_prototypes)
-
-                # Compute the mean tensor for the current class
-                mean_proto = torch.mean(stacked_protos, dim=0)
-                mean_prototypes.append(mean_proto)
-            else:
-                mean_prototypes.append(None)
-
-        # Align global model's prototype with the local prototype
-        alignment_optimizer = torch.optim.SGD(model.base.parameters(), lr=0.01)  # Adjust learning rate and optimizer as needed
-        alignment_loss_fn = torch.nn.MSELoss()
-
-        # print(f'client{self.id}')
-        for _ in range(1):  # Iterate for 1 epochs; adjust as needed
-            for x_batch, y_batch in trainloader:
-                x_batch = x_batch.to(self.device)
-                y_batch = y_batch.to(self.device)
-                global_proto_batch = model.base(x_batch)
-                loss = 0
-                for label in y_batch.unique():
-                    if mean_prototypes[label.item()] is not None:
-                        loss += alignment_loss_fn(global_proto_batch[y_batch == label], mean_prototypes[label.item()])
-                alignment_optimizer.zero_grad()
-                loss.backward()
-                alignment_optimizer.step()
+        return
 
         # Substitute the parameters of the base, enabling personalization
         for new_param, old_param in zip(model.base.parameters(), self.model.base.parameters()):
             old_param.data = new_param.data.clone()
-
-
-        # end
 
