@@ -180,6 +180,57 @@ class FedAvgCNN(nn.Module):
         out = self.fc(out)
         return out
 
+
+
+class FedAmaCNN(nn.Module):
+    def __init__(self, in_features=1, num_classes=10, dim=1024,
+                 p_local=0.5):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_features,
+                        32,
+                        kernel_size=5,
+                        padding=0,
+                        stride=1,
+                        bias=True),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2, 2))
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(32,
+                        64,
+                        kernel_size=5,
+                        padding=0,
+                        stride=1,
+                        bias=True),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=(2, 2))
+        )
+        self.fc1 = nn.Sequential(
+            nn.Linear(dim, 512),
+            nn.ReLU(inplace=True)
+        )
+        self.fc1_local = nn.Sequential(
+            nn.Linear(dim, int(512 * p_local)),
+            nn.ReLU(inplace=True)
+        )
+
+        self.fc = nn.Linear(512, num_classes)
+        self.fc_local = nn.Linear(512 + int(512 * p_local), num_classes)
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.conv2(out)
+        out = torch.flatten(out, 1)
+
+        c_out = self.fc1(out)
+        c_head = self.fc(c_out)
+
+        s_out = self.fc1_local(out)
+        s_head = self.fc_local(torch.stack((c_out, s_out)))
+
+        return torch.stack((c_head, s_head))
+
 # ====================================================================================================================
 
 # https://github.com/katsura-jp/fedavg.pytorch/blob/master/src/models/mlp.py

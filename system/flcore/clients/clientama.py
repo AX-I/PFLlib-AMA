@@ -7,7 +7,23 @@ import copy
 from flcore.clients.clientbase import Client
 from torch.autograd import grad
 
+class FedAMALocalCNN(nn.Module):
+    def __init__(self, in_features=1, num_classes=10, dim=1024, p=0.5):
+        super().__init__()
 
+        self.fc1 = nn.Sequential(
+            nn.Linear(dim, 512*p),
+            nn.ReLU(inplace=True)
+        )
+        self.fc = nn.Linear(512*(1 + p), num_classes)
+
+    def forward(self, x):
+        out = self.fc1(out)
+        out = self.fc(out)
+        return out
+
+def constructLocalModel(model):
+    pass
 
 
 class clientAMA(Client):
@@ -15,6 +31,13 @@ class clientAMA(Client):
     def __init__(self, args, id, train_samples, test_samples, **kwargs):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
 
+        self.global_model = self.model # (self.model.base, self.model.head)
+        self.local_model = constructLocalModel(self.model) # (self.model.base, local_head)
+
+        self.global_optimizer = torch.optim.SGD(self.global_model.parameters(),
+                                                lr=self.learning_rate)
+        self.local_optimizer = torch.optim.SGD(self.local_model.parameters(),
+                                                lr=self.learning_rate)
 
     def train(self):
         trainloader = self.load_train_data()
@@ -36,13 +59,32 @@ class clientAMA(Client):
                 y = y.to(self.device)
                 if self.train_slow:
                     time.sleep(0.1 * np.abs(np.random.rand()))
-                output = self.model(x)
-                loss = self.loss(output, y)
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
 
-        # self.model.cpu()
+                # Sequential
+
+                for p in global_model.parameters():
+                    p.requires_grad = True
+                for p in local_model.parameters():
+                    p.requires_grad = False
+
+                output = self.global_model(x)
+                loss = self.loss(output, y)
+                self.global_optimizer.zero_grad()
+                loss.backward()
+                self.global_optimizer.step()
+
+
+                for p in global_model.parameters():
+                    p.requires_grad = False
+                for p in local_model.parameters():
+                    p.requires_grad = True
+
+                output = self.local_model(x)
+                loss = self.loss(output, y)
+                self.local_optimizer.zero_grad()
+                loss.backward()
+                self.local_optimizer.step()
+
 
         if self.learning_rate_decay:
             self.learning_rate_scheduler.step()
