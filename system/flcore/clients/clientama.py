@@ -49,19 +49,12 @@ class clientAMA(Client):
 
                 # Sequential
 
-                self.setGrad('common')
+                output = self.model.forward_both(x)
+                loss1 = self.loss(output[0], y)
+                loss2 = self.loss(output[1], y)
 
-                output = self.model.forward_c(x)
-                loss = self.loss(output, y)
                 self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-
-                self.setGrad('specific')
-
-                output = self.model.forward_s(x)
-                loss = self.loss(output, y)
-                self.optimizer.zero_grad()
+                loss = loss1 + loss2
                 loss.backward()
                 self.optimizer.step()
 

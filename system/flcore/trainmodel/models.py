@@ -223,7 +223,7 @@ class FedAmaCNN(nn.Module):
     def forward(self, x):
         return self.forward_s(x)
 
-    def forward_s(self, x):
+    def forward_both(self, x):
         out = self.conv1(x)
         out = self.conv2(out)
         out = torch.flatten(out, 1)
@@ -233,7 +233,7 @@ class FedAmaCNN(nn.Module):
 
         s_out = self.fc1_local(out)
         s_head = self.fc_local(torch.concat((c_out, s_out), dim=1))
-        return s_head
+        return (s_head, c_head)
 
     def forward_c(self, x):
         out = self.conv1(x)
@@ -243,6 +243,9 @@ class FedAmaCNN(nn.Module):
         c_out = self.fc1(out)
         c_head = self.fc(c_out)
         return c_head
+
+    def forward_s(self, x):
+        return self.forward_both(x)[0]
 
 # ====================================================================================================================
 
