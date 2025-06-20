@@ -218,7 +218,12 @@ class FedAmaCNN(nn.Module):
         self.fc = nn.Linear(512, num_classes)
         self.fc_local = nn.Linear(512 + int(512 * p_local), num_classes)
 
+        self.local_partitions = [self.fc1_local, self.fc_local]
+
     def forward(self, x):
+        return self.forward_s(x)
+
+    def forward_s(self, x):
         out = self.conv1(x)
         out = self.conv2(out)
         out = torch.flatten(out, 1)
@@ -227,9 +232,17 @@ class FedAmaCNN(nn.Module):
         c_head = self.fc(c_out)
 
         s_out = self.fc1_local(out)
-        s_head = self.fc_local(torch.stack((c_out, s_out)))
+        s_head = self.fc_local(torch.concat((c_out, s_out), dim=1))
+        return s_head
 
-        return torch.stack((c_head, s_head))
+    def forward_c(self, x):
+        out = self.conv1(x)
+        out = self.conv2(out)
+        out = torch.flatten(out, 1)
+
+        c_out = self.fc1(out)
+        c_head = self.fc(c_out)
+        return c_head
 
 # ====================================================================================================================
 

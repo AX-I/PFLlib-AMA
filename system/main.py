@@ -367,10 +367,6 @@ def run(args):
             server = FedAS(args, i)
 
         elif args.algorithm == 'FedAMA':
-
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
             server = FedAMA(args, i)
 
         else:
@@ -509,6 +505,8 @@ if __name__ == "__main__":
     if args.device == "cuda" and not torch.cuda.is_available():
         print("\ncuda is not avaiable.\n")
         args.device = "cpu"
+        import torch_directml
+        args.device = torch_directml.device(torch_directml.default_device())
 
     print("=" * 50)
     for arg in vars(args):

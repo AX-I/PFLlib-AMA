@@ -7,24 +7,6 @@ import copy
 from flcore.clients.clientbase import Client
 from torch.autograd import grad
 
-class FedAMALocalCNN(nn.Module):
-    def __init__(self, in_features=1, num_classes=10, dim=1024, p=0.5):
-        super().__init__()
-
-        self.fc1 = nn.Sequential(
-            nn.Linear(dim, 512*p),
-            nn.ReLU(inplace=True)
-        )
-        self.fc = nn.Linear(512*(1 + p), num_classes)
-
-    def forward(self, x):
-        out = self.fc1(out)
-        out = self.fc(out)
-        return out
-
-def constructLocalModel(model):
-    pass
-
 
 class clientAMA(Client):
 
@@ -32,12 +14,17 @@ class clientAMA(Client):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
 
         self.global_model = self.model # (self.model.base, self.model.head)
-        self.local_model = constructLocalModel(self.model) # (self.model.base, local_head)
+        self.local_model = self.model.local_partitions
 
-        self.global_optimizer = torch.optim.SGD(self.global_model.parameters(),
-                                                lr=self.learning_rate)
-        self.local_optimizer = torch.optim.SGD(self.local_model.parameters(),
-                                                lr=self.learning_rate)
+    def setGrad(self, mode):
+        """mode in ('common', 'specific')"""
+        t = {'common':True, 'specific':False}
+
+        for p in self.model.parameters():
+            p.requires_grad = t[mode]
+        for part in self.local_model:
+            for p in part.parameters():
+                p.requires_grad = not t[mode]
 
     def train(self):
         trainloader = self.load_train_data()
@@ -62,28 +49,21 @@ class clientAMA(Client):
 
                 # Sequential
 
-                for p in global_model.parameters():
-                    p.requires_grad = True
-                for p in local_model.parameters():
-                    p.requires_grad = False
+                self.setGrad('common')
 
-                output = self.global_model(x)
+                output = self.model.forward_c(x)
                 loss = self.loss(output, y)
-                self.global_optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 loss.backward()
-                self.global_optimizer.step()
+                self.optimizer.step()
 
+                self.setGrad('specific')
 
-                for p in global_model.parameters():
-                    p.requires_grad = False
-                for p in local_model.parameters():
-                    p.requires_grad = True
-
-                output = self.local_model(x)
+                output = self.model.forward_s(x)
                 loss = self.loss(output, y)
-                self.local_optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 loss.backward()
-                self.local_optimizer.step()
+                self.optimizer.step()
 
 
         if self.learning_rate_decay:
