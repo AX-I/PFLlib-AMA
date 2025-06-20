@@ -67,10 +67,3 @@ class FedAMA(Server):
             print(f"\n-------------Fine tuning round-------------")
             print("\nEvaluate new clients")
             self.evaluate()
-
-
-    def send_models(self):
-        assert (len(self.clients) > 0)
-
-        for client in self.clients:
-            client.local_initialization(self.global_model)

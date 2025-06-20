@@ -47,8 +47,7 @@ class clientAMA(Client):
                 if self.train_slow:
                     time.sleep(0.1 * np.abs(np.random.rand()))
 
-                # Sequential
-
+                # Simultaneous
                 output = self.model.forward_both(x)
                 loss1 = self.loss(output[0], y)
                 loss2 = self.loss(output[1], y)
@@ -81,19 +80,12 @@ class clientAMA(Client):
         accuracy = 100. * correct / total
         return accuracy
 
-    # def set_parameters(self, model, progress):
-        # # Substitute the parameters of the base, enabling personalization
-        # for new_param, old_param in zip(model.base.parameters(), self.model.base.parameters()):
-        #     old_param.data = new_param.data.clone()
-
-
-    def local_initialization(self, received_global_model):
-        pass
-
-    def set_parameters(self, model, progress):
-        return
+    def set_parameters(self, model):
+        new_model = [part.parameters() for part in model.global_partitions]
+        old_model = [part.parameters() for part in self.model.global_partitions]
 
         # Substitute the parameters of the base, enabling personalization
-        for new_param, old_param in zip(model.base.parameters(), self.model.base.parameters()):
-            old_param.data = new_param.data.clone()
+        for new_part, old_part in zip(new_model, old_model):
+            for new_param, old_param in zip(new_part, old_part):
+                old_param.data = new_param.data.clone()
 

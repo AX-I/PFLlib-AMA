@@ -218,6 +218,7 @@ class FedAmaCNN(nn.Module):
         self.fc = nn.Linear(512, num_classes)
         self.fc_local = nn.Linear(512 + int(512 * p_local), num_classes)
 
+        self.global_partitions = [self.conv1, self.conv2, self.fc1, self.fc]
         self.local_partitions = [self.fc1_local, self.fc_local]
 
     def forward(self, x):
