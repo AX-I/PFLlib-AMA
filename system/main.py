@@ -93,9 +93,11 @@ def run(args):
             if "MNIST" in args.dataset:
                 args.model = FedAvgCNN(in_features=1, num_classes=args.num_classes, dim=1024).to(args.device)
             elif "Cifar10" in args.dataset:
-                # args.model = FedAvgCNN(in_features=3, num_classes=args.num_classes, dim=1600).to(args.device)
-                args.model = FedAmaCNN(in_features=3, num_classes=args.num_classes, dim=1600,
-                                       p_local=0.5).to(args.device)
+                if args.algorithm == 'FedAMA':
+                    args.model = FedAmaCNN(in_features=3, num_classes=args.num_classes, dim=1600,
+                                           p_local=0.5).to(args.device)
+                else:
+                    args.model = FedAvgCNN(in_features=3, num_classes=args.num_classes, dim=1600).to(args.device)
 
             elif "Omniglot" in args.dataset:
                 args.model = FedAvgCNN(in_features=1, num_classes=args.num_classes, dim=33856).to(args.device)

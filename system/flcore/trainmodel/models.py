@@ -167,10 +167,10 @@ class FedAvgCNN(nn.Module):
             nn.MaxPool2d(kernel_size=(2, 2))
         )
         self.fc1 = nn.Sequential(
-            nn.Linear(dim, 512), 
+            nn.Linear(dim, 512+256),
             nn.ReLU(inplace=True)
         )
-        self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Linear(512+256, num_classes)
 
     def forward(self, x):
         out = self.conv1(x)
